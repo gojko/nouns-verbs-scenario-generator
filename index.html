@@ -17,6 +17,11 @@
 .col-md-4 textarea {width: 90%; min-height: 150px}
 </style>
 <div class="container" id="form">
+	<div class="row">
+		<div id="alert" class="alert alert-danger" role="alert" style="display:none">
+			<i class="fa fa-warning"></i>&nbsp;It's not possible to generate a scenario with this configuration. Add nouns/verbs or manage exclusions to create more combinations</i>
+		</div>
+	</div>
   <div class="row">
     <div class="col-md-4"><h2>Nouns</h2>
       <textarea id="nouns" wrap="hard"></textarea>
@@ -113,9 +118,11 @@ jQuery.fn.cacheValueWidget = function () {
             if (scenarioModel.nextScenario()) {
               $('#scenario-holder').removeClass('hide');
               $('#form').addClass('hide'); 
+							$('#alert').hide();
             } else {
               $('#scenario-holder').addClass('hide');
               $('#form').removeClass('hide'); 
+							$('#alert').fadeIn();
             }
          };
      $('[data-role=generate]').click(nextStep);

@@ -64,7 +64,6 @@ describe('Scenario Model', function () {
 			it('skips over excluded verbs for a noun', function () {
 				underTest.markNonsense({verb: 'Burn', noun: 'Book'});
 				underTest.nextScenario();
-
 				expect(itemChooser).toHaveBeenCalledWith(['Delete', 'Write', 'Throw Away']);
 				underTest.nextScenario();
 				expect(scenarioListener).toHaveBeenCalledWith([{noun:'Book', verb: 'Throw Away'}]);
@@ -82,4 +81,73 @@ describe('Scenario Model', function () {
 			});
 		});
   });
+	describe('setNouns', function () {
+		it('sets an array of nouns', function () {
+			underTest.setNouns(['Book', 'Article', 'Disk']);
+			expect(underTest.getNouns()).toEqual(['Book', 'Article', 'Disk']);
+		});
+		it('ignores empty nouns', function () {
+			underTest.setNouns(['Book', ' ', '', 'Disk']);
+			expect(underTest.getNouns()).toEqual(['Book', 'Disk']);
+		});
+		it('ignores duplicated nouns', function () {
+			underTest.setNouns(['Book', 'Book', 'Disk']);
+			expect(underTest.getNouns()).toEqual(['Book', 'Disk']);
+		});
+		it('sets a list of new-line separated items', function () {
+			underTest.setNouns('Book\nArticle\nDisk');
+			expect(underTest.getNouns()).toEqual(['Book', 'Article', 'Disk']);
+		});
+		it('ignores empty items when setting from a string', function () {
+			underTest.setNouns('\nBook\n  \nArticle\nDisk\n');
+			expect(underTest.getNouns()).toEqual(['Book', 'Article', 'Disk']);
+		});
+	});
+	describe('setVerbs', function () {
+		it('sets an array of verbs', function () {
+			underTest.setVerbs(['Burn', 'Turn', 'Spin']);
+			expect(underTest.getVerbs()).toEqual(['Burn', 'Turn', 'Spin']);
+		});
+		it('ignores empty verbs', function () {
+			underTest.setVerbs(['Burn', ' ', '', 'Spin']);
+			expect(underTest.getVerbs()).toEqual(['Burn', 'Spin']);
+		});
+		it('ignores duplicated verbs', function () {
+			underTest.setVerbs(['Burn', 'Burn', 'Spin']);
+			expect(underTest.getVerbs()).toEqual(['Burn', 'Spin']);
+		});
+		it('sets a list of new-line separated items', function () {
+			underTest.setVerbs('Burn\nTurn\nSpin');
+			expect(underTest.getVerbs()).toEqual(['Burn', 'Turn', 'Spin']);
+		});
+		it('ignores empty items when setting from a string', function () {
+			underTest.setVerbs('\nBurn\n  \nTurn\nSpin\n');
+			expect(underTest.getVerbs()).toEqual(['Burn', 'Turn', 'Spin']);
+		});
+	});
+	describe('markNonsense', function () {
+		beforeEach(function () {
+      underTest.setNouns(['Book', 'Article', 'Disk']);
+      underTest.setVerbs(['Delete', 'Write', 'Burn']);
+		});
+		it('adds a nonsense combination to the list, sorted alphabetically by noun and verb', function () {
+			underTest.markNonsense({verb:'Burn', noun: 'Book'});
+			underTest.markNonsense({verb:'Burn', noun: 'Article'});
+			underTest.markNonsense({verb:'Delete', noun: 'Book'});
+			expect(underTest.getExclusions()).toEqual([{noun:'Article', verb:'Burn'}, {noun:'Book', verb: 'Burn'}, {noun: 'Book', verb: 'Delete'}]);
+		});
+	});
+	describe('markNotNonsense', function () {
+		beforeEach(function () {
+      underTest.setNouns(['Book', 'Article', 'Disk']);
+      underTest.setVerbs(['Delete', 'Write', 'Burn']);
+			underTest.markNonsense({verb:'Burn', noun: 'Book'});
+			underTest.markNonsense({verb:'Burn', noun: 'Article'});
+			underTest.markNonsense({verb:'Delete', noun: 'Book'});
+		});
+		it('removes a combination from the exclusion list', function () {
+			underTest.markNotNonsense({verb:'Burn', noun: 'Article'});
+			expect(underTest.getExclusions()).toEqual([{noun:'Book', verb: 'Burn'}, {noun: 'Book', verb: 'Delete'}]);
+		});
+	});
 });
