@@ -31,8 +31,23 @@
     </div>
     <div class="col-md-4">
       <h2>Scenario Generator</h2>
-    Number of scenario steps: <input id="numsteps" type="text" value="5">
-    <button data-role="generate" class="btn btn-primary">Generate!</button>
+      <form id="scenario-form">
+        <div class="form-group">
+          <label for="numsteps">Number of scenario steps</label>
+          <input id="numsteps" type="text" value="5">
+        </div>
+        <div class="form-group">
+          <label for="repetitionmode">Repetition control</label>
+          <select id="repetitionmode">
+            <option value="1">Allow repetition and sequences</option>
+            <option value="2">Steps have to be unique</option>
+            <option value="3">Steps can repeat but not in sequence</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <button data-role="generate" class="btn btn-primary">Generate!</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -88,8 +103,7 @@
 <script async defer id="github-bjs" src="https://buttons.github.io/buttons.js"></script>
 -->
 <script>
-/* todo: steps can appear only once y/n
-   todo: allow repetition
+/* 
    todo: manage exclusions -> remove individual, clear, remove multi, paging?
    todo: save config in localStorage
    todo: download entire config
@@ -132,6 +146,12 @@ jQuery.fn.cacheValueWidget = function () {
      $('#show-form').on('click', function () {
        $('#scenario-holder').addClass('hide');
        $('#form').removeClass('hide'); 
+     });
+     $('#repetitionmode').change(function() {
+        scenarioModel.setRepetitionMode(parseInt($(this).val(), 10));
+     });
+     $('#scenario-form').submit(function () {
+      return false;
      });
  }); 
 </script>

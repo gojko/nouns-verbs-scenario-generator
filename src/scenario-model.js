@@ -4,7 +4,9 @@
 	var ScenarioModel = function (itemChooser) {
 		var self = observable(this),
 			nouns, verbs, numSteps,
-			exclusions = {},
+			nonsenseExclusions = {},
+			sequenceExclusions = {},
+			repetitionMode = ScenarioModel.ALLOW_REPETITION,
 			isBlank = function (s) {
 				return _.isEmpty(s) || s.trim().length === 0;
 			},
@@ -12,33 +14,50 @@
 				return arr[Math.floor(Math.random() * arr.length)];
 			},
 			availableVerbsFor = function (noun) {
-				if (exclusions[noun]) {
-					return _.difference(verbs, _.keys(exclusions[noun]));
-				}
-				return verbs;
+				var exclusions = _.keys(_.extend({}, nonsenseExclusions[noun], sequenceExclusions[noun]));
+				return _.difference(verbs, exclusions);
 			},
 			noAvailableVerbs = function (noun) {
 				return _.isEmpty(availableVerbsFor(noun));
 			},
-			generate = function () {
-				var result = [], noun, verb, index, availableNouns;
-				if (!numSteps) {
-					return false;
-				}
-				availableNouns = _.reject(nouns, noAvailableVerbs);
+			chooseStep = function () {
+				var availableNouns = _.reject(nouns, noAvailableVerbs), noun, verb;
 				if (_.isEmpty(availableNouns)) {
 					return false;
 				}
-				for (index = 0; index < numSteps; index++) {
-					noun = itemChooser(availableNouns);
+				noun = itemChooser(availableNouns);
+				verb = itemChooser(availableVerbsFor(noun));
+				return {'verb': verb, 'noun':	noun};
+			},
+			addToSequenceExclusions = function (step) {
+				if (repetitionMode === ScenarioModel.NO_SEQUENCE) {
+					sequenceExclusions = {};
+					sequenceExclusions[step.noun] = {};
+					sequenceExclusions[step.noun][step.verb] = true;
+				} else if (repetitionMode === ScenarioModel.UNIQUE_STEPS) {
+					sequenceExclusions[step.noun] = sequenceExclusions[step.noun] ||  {};
+					sequenceExclusions[step.noun][step.verb] = true;
+				}
+			},
+			generate = function () {
+				var result = [], step, index;
+				sequenceExclusions = {};
+				if (!numSteps) {
+					return false;
+				}
 
-					verb = itemChooser(availableVerbsFor(noun));
-					result.push({'verb': verb, 'noun':	noun});
+				for (index = 0; index < numSteps; index++) {
+					step = chooseStep();
+					if (!step) {
+						return false;
+					}
+					result.push(step);
+					addToSequenceExclusions(step);
 				}
 				return result;
 			},
 			parseList = function (argList) {
-				if(typeof(argList)==='string') {
+				if(_.isString(argList)) {
 					argList = argList.split('\n');
 				}
 				return _.unique(_.reject(argList, isBlank));
@@ -46,14 +65,14 @@
 
 			itemChooser = itemChooser || randomChooser;
 			self.markNonsense = function (step) {
-				if (!exclusions[step.noun]) {
-					exclusions[step.noun] = {};
+				if (!nonsenseExclusions[step.noun]) {
+					nonsenseExclusions[step.noun] = {};
 				}
-				exclusions[step.noun][step.verb] = true;
+				nonsenseExclusions[step.noun][step.verb] = true;
 			};
 			self.markNotNonsense = function (step) {
-				if (exclusions && exclusions[step.noun]) {
-					delete exclusions[step.noun][step.verb];
+				if (nonsenseExclusions && nonsenseExclusions[step.noun]) {
+					delete nonsenseExclusions[step.noun][step.verb];
 				}
 			};
 			self.setNouns = function (newNouns) {
@@ -72,12 +91,12 @@
 				numSteps = parseInt(numStepsText, 10);
 			};
 			self.getExclusions = function () {
-				if (_.isEmpty(exclusions)) {
+				if (_.isEmpty(nonsenseExclusions)) {
 					return [];
 				}
 				var result = [];
-				_.each(_.keys(exclusions).sort(), function (noun) {
-					_.each(_.keys(exclusions[noun]).sort(), function (verb) {
+				_.each(_.keys(nonsenseExclusions).sort(), function (noun) {
+					_.each(_.keys(nonsenseExclusions[noun]).sort(), function (verb) {
 						result.push({'noun': noun, 'verb': verb});
 					});
 				});
@@ -91,7 +110,13 @@
 				}
 				return false;
 			};
+			self.setRepetitionMode = function (newRepetitionMode) {
+				repetitionMode = newRepetitionMode;
+			};
 		};
+	ScenarioModel.ALLOW_REPETITION = 1;
+	ScenarioModel.UNIQUE_STEPS = 2;
+	ScenarioModel.NO_SEQUENCE = 3;
 	window.Q3 = window.Q3 || {};
 	window.Q3.ScenarioModel = ScenarioModel;
 })();

@@ -81,6 +81,29 @@ describe('Scenario Model', function () {
 			});
 		});
   });
+	describe('selectionMode', function () {
+		beforeEach(function () {
+      underTest.setNouns(['Book', 'Article', 'Disk']);
+      underTest.setVerbs(['Delete', 'Write']);
+      underTest.setNumSteps(3);
+      randomIndexes = [0, 0, 0, 0, 0, 0];
+		});
+		it('does not prevent repetition if set to ALLOW_REPETITION', function () {
+			underTest.setRepetitionMode(Q3.ScenarioModel.ALLOW_REPETITION);
+			underTest.nextScenario();
+			expect(scenarioListener).toHaveBeenCalledWith([{noun:'Book', verb: 'Delete'}, {noun: 'Book', verb: 'Delete'}, {noun:'Book', verb:'Delete'}]);
+		});
+		it('ensures steps do not repeat in the entire scenario if set to UNIQUE_STEPS', function () {
+			underTest.setRepetitionMode(Q3.ScenarioModel.UNIQUE_STEPS);
+			underTest.nextScenario();
+			expect(scenarioListener).toHaveBeenCalledWith([{noun:'Book', verb: 'Delete'}, {noun: 'Book', verb: 'Write'}, {noun:'Article', verb:'Delete'}]);
+		});
+		it('allows same step but not in sequence if set to NO_SEQUENCE', function () {
+			underTest.setRepetitionMode(Q3.ScenarioModel.NO_SEQUENCE);
+			underTest.nextScenario();
+			expect(scenarioListener).toHaveBeenCalledWith([{noun:'Book', verb: 'Delete'}, {noun: 'Book', verb: 'Write'}, {noun:'Book', verb:'Delete'}]);
+		});
+	});
 	describe('setNouns', function () {
 		it('sets an array of nouns', function () {
 			underTest.setNouns(['Book', 'Article', 'Disk']);
